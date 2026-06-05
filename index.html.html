@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SalBot Dashboard — yosalvatore</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#ff3c3c;--red2:#cc2222;--red-dim:#ff3c3c18;
+  --orange:#f97316;--orange-dim:#f9731618;
+  --green:#22c55e;--green-dim:#22c55e18;
+  --bg:#0c0c10;--bg2:#111116;--bg3:#16161d;--bg4:#1c1c26;
+  --border:#222230;--border2:#2a2a3a;
+  --text:#e2e0f0;--muted:#666680;--dimmer:#33334a;
+  --font:'Inter',sans-serif;--head:'Rajdhani',sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px}
+body{display:flex;flex-direction:column;overflow:hidden}
+
+/* TOP BAR */
+#topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:0;height:44px;flex-shrink:0}
+#brand{display:flex;align-items:center;gap:8px;padding-right:16px;border-right:1px solid var(--border);margin-right:12px}
+#brand-icon{width:28px;height:28px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--head);font-weight:700;font-size:14px;color:#fff}
+#brand-name{font-family:var(--head);font-weight:700;font-size:15px;color:var(--text);letter-spacing:0.04em}
+.status-pill{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;margin-right:6px}
+.status-pill .dot{width:6px;height:6px;border-radius:50%}
+.pill-chat{background:#22c55e18;color:#22c55e}.pill-chat .dot{background:#22c55e;animation:p 2s infinite}
+.pill-ai{background:#f9731618;color:#f97316}.pill-ai .dot{background:#f97316}
+.pill-voice{background:#3b82f618;color:#3b82f6}.pill-voice .dot{background:#3b82f6;animation:p 2s infinite}
+.pill-pct{background:var(--bg4);color:var(--muted);border:0.5px solid var(--border2)}
+@keyframes p{0%,100%{opacity:1}50%{opacity:0.3}}
+#topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.tb-btn{background:var(--bg4);border:0.5px solid var(--border2);color:var(--muted);font-size:11px;padding:5px 11px;border-radius:6px;cursor:pointer;font-family:var(--font);transition:color 0.15s,border-color 0.15s}
+.tb-btn:hover{color:var(--text);border-color:var(--border)}
+#bot-live-badge{background:#22c55e18;border:0.5px solid #22c55e55;color:#22c55e;font-size:11px;font-weight:600;padding:5px 11px;border-radius:6px;font-family:var(--head);letter-spacing:0.06em}
+#stop-btn{background:var(--red);border:none;color:#fff;font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;cursor:pointer;font-family:var(--head);letter-spacing:0.05em;transition:background 0.15s}
+#stop-btn:hover{background:var(--red2)}
+#stop-btn.stopped{background:#333}
+
+/* NAV TABS */
+#nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 16px;display:flex;gap:0;flex-shrink:0;overflow-x:auto;scrollbar-width:none}
+.nav-tab{padding:10px 14px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color 0.15s,border-color 0.15s;display:flex;align-items:center;gap:5px}
+.nav-tab:hover{color:var(--text)}
+.nav-tab.active{color:var(--orange);border-bottom-color:var(--orange)}
+.nav-tab svg{width:13px;height:13px;opacity:0.6}
+
+/* LAYOUT */
+#main{display:grid;grid-template-columns:280px 1fr 320px;gap:0;flex:1;overflow:hidden}
+
+/* PANELS */
+.panel{padding:14px;overflow-y:auto;border-right:1px solid var(--border);scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.panel:last-child{border-right:none}
+.panel-section{background:var(--bg3);border:0.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
+.section-title{font-family:var(--head);font-size:12px;font-weight:700;letter-spacing:0.08em;color:var(--orange);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.section-title svg{width:13px;height:13px}
+
+/* CONTROLS */
+.toggle-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
+.toggle-label{font-size:12px;font-weight:500;color:var(--text)}
+.toggle-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.toggle{position:relative;width:36px;height:20px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-slider{position:absolute;inset:0;background:var(--dimmer);border-radius:20px;cursor:pointer;transition:background 0.2s}
+.toggle-slider::after{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform 0.2s}
+.toggle input:checked ~ .toggle-slider{background:var(--green)}
+.toggle input:checked ~ .toggle-slider::after{transform:translateX(16px)}
+.toggle.red input:checked ~ .toggle-slider{background:var(--red)}
+
+select.styled{background:var(--bg4);border:0.5px solid var(--border2);color:var(--text);font-family:var(--font);font-size:12px;padding:7px 10px;border-radius:6px;width:100%;outline:none;cursor:pointer;margin-bottom:10px}
+select.styled:focus{border-color:var(--orange)}
+
+.field-label{font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px}
+
+/* SLIDERS */
+.slider-row{margin-bottom:14px}
+.slider-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.slider-name{font-size:10px;font-weight:600;letter-spacing:0.07em;color:var(--muted)}
+.slider-val{font-size:12px;font-weight:700;color:var(--orange)}
+.slider-sub{font-size:10px;color:var(--dimmer);margin-bottom:5px}
+input[type=range]{width:100%;height:3px;-webkit-appearance:none;appearance:none;background:var(--border2);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--orange);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--orange);border:none;cursor:pointer}
+
+.stream-topic-input{width:100%;background:var(--bg4);border:0.5px solid var(--border2);color:var(--text);font-family:var(--font);font-size:12px;padding:8px 10px;border-radius:6px;outline:none;transition:border-color 0.2s}
+.stream-topic-input:focus{border-color:var(--orange)}
+.stream-topic-sub{font-size:10px;color:var(--muted);margin-top:4px}
+
+.save-btn{width:100%;background:transparent;border:1px solid var(--orange);color:var(--orange);font-family:var(--head);font-size:13px;font-weight:700;letter-spacing:0.06em;padding:10px;border-radius:8px;cursor:pointer;transition:background 0.2s,color 0.2s;margin-top:4px}
+.save-btn:hover{background:var(--orange);color:#fff}
+
+/* CHAT FEEDS */
+#mid-panel{display:flex;flex-direction:column;gap:0;overflow:hidden}
+.feed-box{flex:1;border-bottom:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.feed-header{padding:10px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.feed-title{font-family:var(--head);font-size:12px;font-weight:700;letter-spacing:0.08em;color:var(--orange);display:flex;align-items:center;gap:6px}
+.feed-count{font-size:10px;color:var(--muted)}
+.feed-messages{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.chat-msg{font-size:12px;line-height:1.45}
+.chat-user{font-weight:600;color:var(--orange);margin-right:4px}
+.chat-user.bot-tag{color:#a78bfa}
+.chat-text{color:#bbb}
+.chat-time{font-size:10px;color:var(--dimmer);margin-left:4px}
+.bot-badge{background:#a78bfa22;color:#a78bfa;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px;letter-spacing:0.05em}
+.empty-feed{color:var(--dimmer);font-size:11px;padding:12px 0;text-align:center}
+
+/* VOICE TRANSCRIPT */
+.transcript-box{background:var(--bg4);border:0.5px solid var(--border2);border-radius:6px;padding:10px 12px;min-height:60px;font-size:11px;color:var(--dimmer);font-style:italic}
+
+/* RIGHT PANEL */
+#right-panel{display:flex;flex-direction:column;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;padding:14px;gap:12px}
+
+/* MANUAL CHAT */
+.manual-label{font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px}
+.send-as-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.chatter-avatar{width:22px;height:22px;border-radius:50%;background:var(--orange);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:var(--head);flex-shrink:0}
+.chatter-name{font-size:12px;font-weight:500}
+.platform-tag{font-size:10px;color:#53fc18;background:#53fc1815;border:0.5px solid #53fc1840;padding:1px 6px;border-radius:10px;margin-left:4px}
+.manual-input-row{display:flex;gap:6px}
+.manual-input{flex:1;background:var(--bg4);border:0.5px solid var(--border2);color:var(--text);font-family:var(--font);font-size:12px;padding:8px 10px;border-radius:6px;outline:none;transition:border-color 0.2s}
+.manual-input:focus{border-color:var(--orange)}
+.manual-send{width:34px;height:34px;background:var(--orange);border:none;border-radius:6px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;transition:background 0.15s;flex-shrink:0}
+.manual-send:hover{background:#ea6a0a}
+.manual-send svg{width:14px;height:14px}
+.manual-note{font-size:10px;color:var(--dimmer);margin-top:5px}
+
+/* MOD TOOLS */
+.mod-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.mod-badge{background:#f9731622;color:var(--orange);font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:0.06em}
+.mod-voice-box{background:var(--bg4);border:0.5px solid var(--border2);border-radius:6px;padding:8px 10px;margin-bottom:10px}
+.mod-voice-title{font-size:10px;font-weight:700;color:var(--orange);letter-spacing:0.07em;margin-bottom:3px}
+.mod-voice-sub{font-size:10px;color:var(--muted)}
+.mod-input{width:100%;background:var(--bg4);border:0.5px solid var(--border2);color:var(--text);font-family:var(--font);font-size:12px;padding:7px 10px;border-radius:6px;outline:none;margin-bottom:6px;transition:border-color 0.2s}
+.mod-input:focus{border-color:var(--red)}
+.timeout-row{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}
+.timeout-chip{padding:4px 10px;border-radius:5px;font-size:11px;font-weight:500;border:0.5px solid var(--border2);color:var(--muted);background:var(--bg4);cursor:pointer;transition:all 0.15s}
+.timeout-chip:hover,.timeout-chip.active{background:var(--orange);color:#fff;border-color:var(--orange)}
+.mod-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.mod-action-btn{padding:8px;border-radius:6px;border:none;font-family:var(--head);font-size:12px;font-weight:700;letter-spacing:0.05em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:opacity 0.15s}
+.mod-action-btn:hover{opacity:0.85}
+.btn-timeout{background:var(--orange);color:#fff}
+.btn-ban{background:var(--red);color:#fff}
+.btn-unban{background:#22c55e22;color:#22c55e;border:0.5px solid #22c55e55}
+.mod-note{font-size:10px;color:var(--dimmer);margin-top:6px;text-align:center}
+
+/* QUICK RESPONSE */
+.qr-item{background:var(--bg4);border:0.5px solid var(--border2);border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:12px;color:#bbb;cursor:pointer;transition:border-color 0.15s}
+.qr-item:hover{border-color:var(--orange);color:var(--text)}
+
+/* SCROLLBARS */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div id="brand">
+    <div id="brand-icon">S</div>
+    <div id="brand-name">yosalvatore</div>
+  </div>
+  <div class="status-pill pill-chat"><div class="dot"></div>CHAT Active</div>
+  <div class="status-pill pill-ai"><div class="dot"></div>AI Idle</div>
+  <div class="status-pill pill-voice"><div class="dot"></div>VOICE Active</div>
+  <div class="status-pill pill-pct">⚡ 0%</div>
+  <div id="topbar-right">
+    <button class="tb-btn">Voice Off</button>
+    <button class="tb-btn">Stream OFF</button>
+    <div id="bot-live-badge">BOT LIVE</div>
+    <button id="stop-btn" onclick="toggleBot()">Stop Bot</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<div id="nav">
+  <div class="nav-tab active">⚡ Console</div>
+  <div class="nav-tab">💬 Quick Responses</div>
+  <div class="nav-tab">📅 Scheduling</div>
+  <div class="nav-tab">🎭 Identities</div>
+  <div class="nav-tab">📋 Chatter Lists</div>
+  <div class="nav-tab">⌘ Commands</div>
+  <div class="nav-tab">🧪 Simulator</div>
+  <div class="nav-tab">📊 Analytics</div>
+  <div class="nav-tab">📜 Chat Logs</div>
+  <div class="nav-tab">📈 Trigger Stats</div>
+  <div class="nav-tab">⚙ Admin</div>
+</div>
+
+<!-- MAIN GRID -->
+<div id="main">
+
+  <!-- LEFT: BOT CONTROLS -->
+  <div class="panel" style="background:var(--bg2)">
+
+    <div class="panel-section">
+      <div class="section-title">⚡ BOT CONTROLS</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Bot Enabled</div>
+          <div class="toggle-sub">Master on/off for AI replies</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" checked id="bot-enabled">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Roast Mode</div>
+          <div class="toggle-sub">Light friendly teasing only</div>
+        </div>
+        <label class="toggle red">
+          <input type="checkbox" checked id="roast-mode">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="field-label">Reply Style</div>
+      <select class="styled">
+        <option>😊 Friendly</option>
+        <option>🔥 Hype</option>
+        <option>😈 Savage</option>
+        <option>🧠 Informative</option>
+      </select>
+
+      <div class="field-label">Voice Mode</div>
+      <select class="styled">
+        <option>Both</option>
+        <option>Text Only</option>
+        <option>Voice Only</option>
+      </select>
+    </div>
+
+    <div class="panel-section">
+      <div class="section-title">🎛 TUNING</div>
+
+      <div class="slider-row">
+        <div class="slider-header"><span class="slider-name">CS:GO EXPERTISE</span><span class="slider-val" id="v-csgo">7</span></div>
+        <div class="slider-sub">Higher = more tactical CS knowledge</div>
+        <input type="range" min="1" max="10" value="7" oninput="document.getElementById('v-csgo').textContent=this.value">
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header"><span class="slider-name">ELDEN RING EXPERTISE</span><span class="slider-val" id="v-er">8</span></div>
+        <div class="slider-sub">Bosses, builds, lore depth</div>
+        <input type="range" min="1" max="10" value="8" oninput="document.getElementById('v-er').textContent=this.value">
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header"><span class="slider-name">BATMAN EXPERTISE</span><span class="slider-val" id="v-bat">6</span></div>
+        <div class="slider-sub">Arkham lore, combat, secrets</div>
+        <input type="range" min="1" max="10" value="6" oninput="document.getElementById('v-bat').textContent=this.value">
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header"><span class="slider-name">REPLY FREQUENCY</span><span class="slider-val" id="v-freq">6</span></div>
+        <div class="slider-sub">How often bot replies to chat</div>
+        <input type="range" min="1" max="10" value="6" oninput="document.getElementById('v-freq').textContent=this.value">
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header"><span class="slider-name">COOLDOWN</span><span class="slider-val" id="v-cool">15s</span></div>
+        <div class="slider-sub">Seconds between bot replies</div>
+        <input type="range" min="5" max="60" value="15" step="5" oninput="document.getElementById('v-cool').textContent=this.value+'s'">
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header"><span class="slider-name">MAX REPLIES/MIN</span><span class="slider-val" id="v-max">4</span></div>
+        <div class="slider-sub"></div>
+        <input type="range" min="1" max="10" value="4" oninput="document.getElementById('v-max').textContent=this.value">
+      </div>
+
+      <div class="field-label">Emote Frequency</div>
+      <select class="styled">
+        <option>Low</option>
+        <option selected>Medium</option>
+        <option>High</option>
+        <option>Off</option>
+      </select>
+    </div>
+
+    <div class="panel-section">
+      <div class="section-title">🔥 STREAM TOPIC</div>
+      <input class="stream-topic-input" type="text" value="CS:GO ranked grind — let's hit Global" id="stream-topic">
+      <div class="stream-topic-sub">Bot uses this for replies & conversation starters.</div>
+    </div>
+
+    <button class="save-btn" onclick="saveSettings()">Save Settings</button>
+  </div>
+
+  <!-- MIDDLE: CHAT FEEDS -->
+  <div id="mid-panel" style="background:var(--bg)">
+
+    <!-- Live Chat Feed -->
+    <div class="feed-box" style="flex:1.2">
+      <div class="feed-header">
+        <div class="feed-title">💬 LIVE CHAT FEED</div>
+        <div class="feed-count" id="chat-count">0 msgs</div>
+      </div>
+      <div class="feed-messages" id="live-feed">
+        <div class="empty-feed">Waiting for chat messages...</div>
+      </div>
+    </div>
+
+    <!-- Bot Replies Feed -->
+    <div class="feed-box" style="flex:1.2">
+      <div class="feed-header">
+        <div class="feed-title">🤖 BOT REPLIES</div>
+        <div class="feed-count" id="bot-count">0 msgs</div>
+      </div>
+      <div class="feed-messages" id="bot-feed">
+        <div class="empty-feed">No bot replies yet...</div>
+      </div>
+    </div>
+
+    <!-- Voice Transcript -->
+    <div class="feed-box" style="flex:0.7">
+      <div class="feed-header">
+        <div class="feed-title">🎙 VOICE TRANSCRIPT</div>
+      </div>
+      <div style="padding:12px 14px;flex:1">
+        <div class="transcript-box" id="transcript">No transcript yet...</div>
+        <div style="font-size:10px;color:var(--dimmer);margin-top:6px">Last 0 transcript snippets captured</div>
+      </div>
+    </div>
+
+    <!-- Blocked Messages -->
+    <div class="feed-box" style="flex:0.7">
+      <div class="feed-header">
+        <div class="feed-title">🚫 BLOCKED MESSAGES</div>
+        <div class="feed-count">0 msgs</div>
+      </div>
+      <div class="feed-messages">
+        <div class="empty-feed">No blocked messages yet...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="right-panel" style="background:var(--bg2)">
+
+    <!-- Manual Chat -->
+    <div class="panel-section">
+      <div class="section-title">💬 MANUAL CHAT</div>
+      <div class="manual-label">Send As</div>
+      <div class="send-as-row">
+        <div class="chatter-avatar">S</div>
+        <span class="chatter-name">yosalvatore</span>
+        <span class="platform-tag">Kick</span>
+      </div>
+      <div class="manual-label">Message</div>
+      <div class="manual-input-row">
+        <input class="manual-input" type="text" placeholder="Type a message... (Enter to send)" id="manual-msg" onkeydown="if(event.key==='Enter')sendManual()">
+        <button class="manual-send" onclick="sendManual()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+      <div class="manual-note">AI takes over 5 seconds after your last manual message</div>
+    </div>
+
+    <!-- Moderator Tools -->
+    <div class="panel-section">
+      <div class="section-title">🛡 MODERATOR TOOLS</div>
+      <div class="mod-header">
+        <span style="font-size:11px;font-weight:600;color:var(--text)">MOD ACTIONS</span>
+        <span class="mod-badge">MOD</span>
+      </div>
+
+      <div class="mod-voice-box">
+        <div class="mod-voice-title">⚡ VOICE COMMAND DETECTION — ACTIVE</div>
+        <div class="mod-voice-sub">Say "timeout [user] [duration]", "ban [user]", or "unban [user]"</div>
+      </div>
+
+      <div class="manual-label">Manual Action</div>
+      <input class="mod-input" type="text" placeholder="Kick username..." id="mod-user">
+      <input class="mod-input" type="text" placeholder="Reason (optional)..." id="mod-reason">
+
+      <div class="manual-label">Timeout Duration</div>
+      <div class="timeout-row">
+        <div class="timeout-chip" onclick="setTO(this,'1m')">1 min</div>
+        <div class="timeout-chip active" onclick="setTO(this,'5m')">5 min</div>
+        <div class="timeout-chip" onclick="setTO(this,'10m')">10 min</div>
+        <div class="timeout-chip" onclick="setTO(this,'30m')">30 min</div>
+        <div class="timeout-chip" onclick="setTO(this,'1h')">1 hr</div>
+        <div class="timeout-chip" onclick="setTO(this,'24h')">24 hr</div>
+      </div>
+
+      <div class="mod-actions">
+        <button class="mod-action-btn btn-timeout" onclick="modAction('timeout')">⏱ Timeout</button>
+        <button class="mod-action-btn btn-ban" onclick="modAction('ban')">🚫 Ban</button>
+        <button class="mod-action-btn btn-unban" onclick="modAction('unban')">✓ Unban</button>
+      </div>
+      <div class="mod-note" id="mod-note">Actions execute via Kick API</div>
+    </div>
+
+    <!-- Quick Responses -->
+    <div class="panel-section">
+      <div class="section-title">⚡ QUICK RESPONSES</div>
+      <div class="qr-item" onclick="quickSend(this)">Welcome to the stream! Follow for daily CS:GO grind 🔥</div>
+      <div class="qr-item" onclick="quickSend(this)">Kick: kick.com/yosalvatore — sub up!</div>
+      <div class="qr-item" onclick="quickSend(this)">Playing CS:GO, Elden Ring & Batman Arkham</div>
+      <div class="qr-item" onclick="quickSend(this)">GGs only in this chat, let's keep it clean 💪</div>
+      <div class="qr-item" onclick="quickSend(this)">!lurk if you're going AFK — we see you 👀</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let botRunning = true;
+let chatCount = 0;
+let botMsgCount = 0;
+let selectedTO = '5m';
+
+const fakeUsers = ['xXfr4ggerXx','NightOwl99','clutchking','salty_viewer','G2fan','darksouls_vet','arkhamknight','cs_nerd','yolochat','shadow_lurker'];
+const fakeMessages = [
+  'bro that aim is CRACKED',
+  'how many hours in CS:GO?',
+  'LET HIM COOK 🔥',
+  'what crosshair do you use?',
+  'Malenia is actually impossible lol',
+  'W streamer no cap',
+  'first time here, this is sick',
+  'clip that!! clip that!!',
+  'what rank are you in CS?',
+  'batman arkham city is goated',
+  'bro got diff\'d LMAO',
+  'what\'s your sensitivity?',
+  'pog pog pog',
+  'the lore in Elden Ring is wild',
+  'anyone know when he streams next?',
+];
+
+const systemPrompt = `You are SalBot, the AI chat bot for Sal's Kick stream at kick.com/yosalvatore. You respond to chat messages as a dark, edgy, hype stream bot. Sal plays CS:GO, Elden Ring, and Batman Arkham. Keep replies SHORT — max 1-2 sentences, punchy Kick/Twitch chat style. Be entertaining and loyal to Sal.`;
+
+function now() {
+  const d = new Date();
+  return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')+':'+d.getSeconds().toString().padStart(2,'0');
+}
+
+function addToFeed(feedId, user, text, isBot=false) {
+  const feed = document.getElementById(feedId);
+  const empty = feed.querySelector('.empty-feed');
+  if(empty) empty.remove();
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  div.innerHTML = `<span class="chat-user${isBot?' bot-tag':''}">${user}${isBot?'<span class="bot-badge">BOT</span>':''}</span><span class="chat-text">${text}</span><span class="chat-time">${now()}</span>`;
+  feed.appendChild(div);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+async function getBotReply(msg) {
+  if(!botRunning) return;
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:120,
+        system: systemPrompt,
+        messages:[{role:'user',content:msg}]
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.map(b=>b.text||'').join('') || '';
+    if(reply) {
+      botMsgCount++;
+      document.getElementById('bot-count').textContent = botMsgCount + ' msgs';
+      addToFeed('bot-feed','SalBot',reply,true);
+    }
+  } catch(e){}
+}
+
+function spawnChatMsg() {
+  if(!botRunning) return;
+  const user = fakeUsers[Math.floor(Math.random()*fakeUsers.length)];
+  const text = fakeMessages[Math.floor(Math.random()*fakeMessages.length)];
+  chatCount++;
+  document.getElementById('chat-count').textContent = chatCount + ' msgs';
+  addToFeed('live-feed', user, text);
+  if(Math.random() > 0.45) {
+    setTimeout(() => getBotReply(text), 1200 + Math.random()*2000);
+  }
+}
+
+// Simulate live chat rolling in
+function startChat() {
+  spawnChatMsg();
+  setTimeout(startChat, 3000 + Math.random()*5000);
+}
+setTimeout(startChat, 1500);
+
+function toggleBot() {
+  botRunning = !botRunning;
+  const btn = document.getElementById('stop-btn');
+  const badge = document.getElementById('bot-live-badge');
+  if(botRunning) {
+    btn.textContent = 'Stop Bot';
+    btn.classList.remove('stopped');
+    badge.textContent = 'BOT LIVE';
+    badge.style.color = '#22c55e';
+    badge.style.borderColor = '#22c55e55';
+    badge.style.background = '#22c55e18';
+    startChat();
+  } else {
+    btn.textContent = 'Start Bot';
+    btn.classList.add('stopped');
+    badge.textContent = 'BOT OFF';
+    badge.style.color = 'var(--muted)';
+    badge.style.borderColor = 'var(--border2)';
+    badge.style.background = 'var(--bg4)';
+  }
+}
+
+function sendManual() {
+  const inp = document.getElementById('manual-msg');
+  const text = inp.value.trim();
+  if(!text) return;
+  chatCount++;
+  document.getElementById('chat-count').textContent = chatCount + ' msgs';
+  addToFeed('live-feed','yosalvatore',text);
+  inp.value = '';
+  setTimeout(() => getBotReply(text), 1000);
+}
+
+function setTO(el, val) {
+  document.querySelectorAll('.timeout-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  selectedTO = val;
+}
+
+function modAction(action) {
+  const user = document.getElementById('mod-user').value.trim();
+  const note = document.getElementById('mod-note');
+  if(!user) { note.textContent = 'Enter a username first.'; note.style.color='var(--red)'; return; }
+  note.style.color='var(--muted)';
+  if(action==='timeout') note.textContent = `⏱ Timed out @${user} for ${selectedTO}`;
+  else if(action==='ban') note.textContent = `🚫 Banned @${user}`;
+  else note.textContent = `✓ Unbanned @${user}`;
+  document.getElementById('mod-user').value='';
+  document.getElementById('mod-reason').value='';
+}
+
+function quickSend(el) {
+  const text = el.textContent;
+  chatCount++;
+  document.getElementById('chat-count').textContent = chatCount + ' msgs';
+  addToFeed('live-feed','yosalvatore',text);
+}
+
+function saveSettings() {
+  const btn = document.querySelector('.save-btn');
+  btn.textContent = '✓ Saved!';
+  btn.style.background = '#22c55e';
+  btn.style.color = '#fff';
+  btn.style.border = 'none';
+  setTimeout(()=>{
+    btn.textContent = 'Save Settings';
+    btn.style.background = '';
+    btn.style.color = '';
+    btn.style.border = '';
+  }, 2000);
+}
+
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', function(){
+    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
